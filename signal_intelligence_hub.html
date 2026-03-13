@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Intelligence Hub — FutureBridge</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#04070b; --s1:#070c12; --s2:#0b1520; --s3:#101d2c;
+  --b1:#162030; --b2:#1e3048; --b3:#283d58;
+  --accent:#00e5ff; --gold:#f59e0b; --green:#10d98a;
+  --red:#f43f5e; --purple:#a78bfa; --orange:#fb923c;
+  --text:#ffffff; --mid:#c8daea; --dim:#7a9ab8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;overflow-x:hidden}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--s1);border-bottom:1px solid var(--b2);display:flex;align-items:center;padding:0 20px;height:52px;gap:14px;position:sticky;top:0;z-index:50}
+.logo{font-family:'Syne',sans-serif;font-weight:900;font-size:1.05rem;color:var(--accent);white-space:nowrap}
+.logo span{color:var(--orange)}
+.divider{width:1px;height:28px;background:var(--b2);flex-shrink:0}
+.tagline{font-size:0.62rem;color:var(--dim);white-space:nowrap}
+.tabs{margin-left:auto;display:flex;gap:4px}
+.tab{background:transparent;border:1px solid var(--b2);color:var(--mid);font-family:'DM Mono',monospace;font-size:0.68rem;padding:6px 14px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;font-weight:500;transition:all .15s}
+.tab:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.07)}
+.tab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.1)}
+
+/* ── CONTENT PANELS ── */
+.panel{display:none;padding:24px 24px 40px}
+.panel.active{display:block}
+.panel-head{font-family:'Syne',sans-serif;font-weight:900;font-size:1.3rem;margin-bottom:4px}
+.panel-sub{font-size:0.68rem;color:var(--dim);margin-bottom:22px}
+
+/* ── HEAT MAP ── */
+.hmap-scroll{overflow-x:auto;padding-bottom:4px}
+.hmap-table{border-collapse:collapse;min-width:100%}
+.hmap-table th{padding:7px 10px;font-size:0.59rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--b1);white-space:nowrap;font-weight:500}
+.hmap-table th.wk-hd{text-align:center;font-size:0.56rem;min-width:58px}
+.hmap-table th.wk-hd.cur{color:var(--accent)}
+.hmap-table td{border:1px solid var(--b1)}
+.topic-lbl{display:flex;align-items:center;gap:9px;padding:7px 14px;min-width:210px;white-space:nowrap}
+.t-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.t-code{font-family:'Syne',sans-serif;font-weight:800;font-size:0.82rem}
+.t-name{font-size:0.61rem;color:var(--dim)}
+.hcell{width:58px;height:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:filter .12s}
+.hcell:hover{filter:brightness(1.4)}
+.hcell-val{font-family:'Syne',sans-serif;font-weight:800;font-size:0.85rem;color:rgba(255,255,255,.9);pointer-events:none}
+.hcell-val.zero{color:var(--b3);font-size:0.72rem}
+.trend-td{padding:7px 12px;text-align:center;white-space:nowrap;font-size:0.72rem;min-width:70px}
+.total-td{padding:7px 12px;text-align:center;font-family:'Syne',sans-serif;font-weight:800;font-size:0.9rem;min-width:50px}
+.t-up{color:var(--green)} .t-dn{color:var(--red)} .t-fl{color:var(--dim)}
+
+/* ── LEGEND ── */
+.legend{display:flex;align-items:center;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.leg-lbl{font-size:0.6rem;color:var(--dim);margin-right:6px}
+.leg-swatch{width:32px;height:14px}
+.leg-vals{font-size:0.57rem;color:var(--dim);margin-left:4px}
+
+/* ── BUTTONS ── */
+.btn{background:var(--b2);border:1px solid var(--b3);color:var(--mid);font-family:'DM Mono',monospace;font-size:0.68rem;padding:8px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:all .15s;font-weight:500}
+.btn:hover{background:var(--b3);color:var(--text)}
+.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{background:#00ccee}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.hmap-actions{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+#last-saved{font-size:0.62rem;color:var(--dim)}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--b2);padding:24px;width:440px;max-width:94vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-family:'Syne',sans-serif;font-weight:900;font-size:1rem;margin-bottom:16px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;gap:8px;background:var(--s2);padding:8px 12px}
+.modal-topic-info{flex:1;min-width:0}
+.modal-tc{font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem}
+.modal-tn{font-size:0.6rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-input{width:64px;background:var(--bg);border:1px solid var(--b2);color:var(--text);font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;padding:6px 10px;text-align:center}
+.modal-input:focus{border-color:var(--accent);outline:none}
+.modal-week-lbl{font-size:0.62rem;color:var(--dim);margin-bottom:12px}
+.modal-btns{display:flex;gap:8px}
+
+/* ── BRIEF FORM ── */
+.brief-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.fg label{font-size:0.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:5px}
+.fg select,.fg input,.fg textarea{width:100%;background:var(--s1);border:1px solid var(--b2);color:var(--text);font-family:'DM Mono',monospace;font-size:0.82rem;padding:8px 12px;outline:none;resize:vertical;transition:border-color .15s}
+.fg select:focus,.fg input:focus,.fg textarea:focus{border-color:var(--accent)}
+.fg textarea{min-height:78px;line-height:1.55}
+.span2{grid-column:1/-1}
+.gen-row{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+#gen-status{font-size:0.65rem;color:var(--dim)}
+
+/* ── LOADING ── */
+.loader{height:2px;background:var(--b1);overflow:hidden;display:none;margin-bottom:18px}
+.loader.on{display:block}
+.loader-bar{height:100%;width:50%;background:var(--accent);animation:slide 1.4s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+
+/* ── BRIEF OUTPUT ── */
+.brief-out{display:none;background:var(--s1);border:1px solid var(--b1)}
+.brief-out.show{display:block}
+.brief-hdr{padding:18px 24px 14px;border-bottom:1px solid var(--b2)}
+.brief-topic-tag{font-size:0.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
+.brief-title{font-family:'Syne',sans-serif;font-weight:900;font-size:1.05rem}
+.brief-body{padding:0}
+.bs{padding:16px 24px;border-bottom:1px solid var(--b1)}
+.bs:last-child{border-bottom:none}
+.bs-lbl{font-size:0.58rem;text-transform:uppercase;letter-spacing:.14em;margin-bottom:7px;font-weight:600}
+.bs-txt{font-size:0.83rem;color:var(--mid);line-height:1.72}
+.bs.insight .bs-txt{color:var(--text);font-size:0.9rem;border-left:3px solid var(--accent);padding-left:16px;font-style:italic}
+.bs.bigbet .bs-txt{color:var(--gold)}
+
+/* ── BRIEF FORMAT GUIDE ── */
+.fmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b1);border:1px solid var(--b1);margin-top:22px}
+.fmt-cell{background:var(--s1);padding:12px 14px;display:flex;gap:10px}
+.fmt-n{font-family:'Syne',sans-serif;font-weight:900;font-size:0.85rem;color:var(--accent);min-width:20px;flex-shrink:0}
+.fmt-info{}
+.fmt-head{font-size:0.7rem;font-weight:600;margin-bottom:3px;color:var(--text)}
+.fmt-desc{font-size:0.63rem;color:var(--dim);line-height:1.55}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">SIGNAL <span>INTELLIGENCE</span></div>
+  <div class="divider"></div>
+  <div class="tagline">FutureBridge Advisory · News Velocity + Research Brief Engine</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('heatmap',this)">News Heat Map</button>
+    <button class="tab" onclick="switchTab('brief',this)">Research Brief</button>
+  </div>
+</div>
+
+<!-- ══ HEAT MAP ══════════════════════════════════════════════════════════════ -->
+<div class="panel active" id="tab-heatmap">
+  <div class="panel-head">News Velocity Heat Map</div>
+  <div class="panel-sub">Article volume per topic per week. Intensity = coverage. Click any cell to update. Trend compares last 4 weeks vs prior 4.</div>
+
+  <div class="legend">
+    <span class="leg-lbl">Coverage intensity:</span>
+    <div class="leg-swatch" style="background:var(--b1)"></div>
+    <div class="leg-swatch" style="background:rgba(0,229,255,.18)"></div>
+    <div class="leg-swatch" style="background:rgba(0,229,255,.42)"></div>
+    <div class="leg-swatch" style="background:rgba(0,229,255,.68)"></div>
+    <div class="leg-swatch" style="background:rgba(0,229,255,.92)"></div>
+    <span class="leg-vals">0 articles → 1–3 → 4–8 → 9–15 → 16+</span>
+  </div>
+
+  <div class="hmap-scroll" id="hmap-wrap"></div>
+
+  <div class="hmap-actions">
+    <button class="btn primary" onclick="openBulkModal()">+ Log This Week</button>
+    <button class="btn" onclick="exportCSV()">Export CSV</button>
+    <span id="last-saved"></span>
+  </div>
+</div>
+
+<!-- ══ BRIEF GENERATOR ═══════════════════════════════════════════════════════ -->
+<div class="panel" id="tab-brief">
+  <div class="panel-head">Research Brief Generator</div>
+  <div class="panel-sub">Eight-section intelligence brief — AI-powered, client-contextualised, FutureBridge voice. Uses live web search for enriched context.</div>
+
+  <div class="brief-form">
+    <div class="fg">
+      <label>Topic</label>
+      <select id="f-topic">
+        <option value="CCS">Carbon Capture &amp; Storage</option>
+        <option value="H2">Hydrogen — Green &amp; Blue</option>
+        <option value="BATT">Battery Storage &amp; Grid</option>
+        <option value="EV">EV &amp; Charging Infrastructure</option>
+        <option value="SAF">Sustainable Aviation Fuel</option>
+        <option value="DIG">Digital &amp; AI in Energy</option>
+        <option value="IND">Industrial Decarbonisation</option>
+        <option value="NUC">Nuclear &amp; Advanced Power</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Client Name</label>
+      <input type="text" id="f-client" placeholder="e.g. Chevron, Shell, BMW Group…" />
+    </div>
+    <div class="fg span2">
+      <label>News Signal — paste article text, headline, or raw signal</label>
+      <textarea id="f-signal" placeholder="Paste the news article or signal text here. The brief will be built around this specific development." style="min-height:100px"></textarea>
+    </div>
+    <div class="fg span2">
+      <label>Client Context — known strategy, live initiatives, priorities (optional but recommended)</label>
+      <textarea id="f-context" placeholder="e.g. Client has a $4B New Energies programme, active CCS hub development in Texas, recently acquired a renewable fuels business. Key contacts are evaluating DAC partnerships…"></textarea>
+    </div>
+  </div>
+
+  <div class="gen-row">
+    <button class="btn primary" id="gen-btn" onclick="generateBrief()">Generate Brief</button>
+    <button class="btn" id="copy-btn" onclick="copyBrief()" style="display:none">Copy Text</button>
+    <span id="gen-status"></span>
+  </div>
+
+  <div class="loader" id="loader"><div class="loader-bar"></div></div>
+
+  <div class="brief-out" id="brief-out"></div>
+
+  <!-- FORMAT GUIDE -->
+  <div style="margin-top:28px">
+    <div style="font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px">Standard Brief Architecture</div>
+    <div class="fmt-grid">
+      <div class="fmt-cell"><div class="fmt-n">01</div><div class="fmt-info"><div class="fmt-head">Signal</div><div class="fmt-desc">The raw news event. 1–2 sentences only. No interpretation. Just what happened.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">02</div><div class="fmt-info"><div class="fmt-head">So What</div><div class="fmt-desc">Commercial implications. What changes because of this. Why it matters now.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">03</div><div class="fmt-info"><div class="fmt-head">Your World</div><div class="fmt-desc">Client-specific impact. Their strategy, assets, and initiatives made explicit.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">04</div><div class="fmt-info"><div class="fmt-head">Context</div><div class="fmt-desc">Market sizing, benchmarks, comparables. Quantified where possible.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">05</div><div class="fmt-info"><div class="fmt-head">Ecosystem</div><div class="fmt-desc">What else is moving — adjacent news, supply chain, competitor positions.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">06</div><div class="fmt-info"><div class="fmt-head">Forecast</div><div class="fmt-desc">24–36 month directional view. One clear, defensible trajectory.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">07</div><div class="fmt-info"><div class="fmt-head">Big Bet</div><div class="fmt-desc">One bold forward hypothesis. Provocative but grounded. 1–2 sentences max.</div></div></div>
+      <div class="fmt-cell"><div class="fmt-n">08</div><div class="fmt-info"><div class="fmt-head">Insight Statement</div><div class="fmt-desc">Exactly one sentence. Signal meets client strategy. The brief's editorial conclusion.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: BULK WEEK ENTRY ════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>Log Article Counts</h3>
+    <div class="modal-week-lbl" id="modal-wk-lbl">Current week</div>
+    <div class="modal-grid" id="modal-rows"></div>
+    <div class="modal-btns">
+      <button class="btn primary" onclick="saveModal()">Save</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TOPICS ────────────────────────────────────────────────────────────────────
+const TOPICS = [
+  {code:'CCS',  label:'Carbon Capture & Storage',     color:'#3F43AD'},
+  {code:'H2',   label:'Hydrogen — Green & Blue',      color:'#22AE8A'},
+  {code:'BATT', label:'Battery Storage & Grid',       color:'#48B8E7'},
+  {code:'EV',   label:'EV & Charging Infrastructure', color:'#9D7AD2'},
+  {code:'SAF',  label:'Sustainable Aviation Fuel',    color:'#FDCF41'},
+  {code:'DIG',  label:'Digital & AI in Energy',       color:'#f43f5e'},
+  {code:'IND',  label:'Industrial Decarbonisation',   color:'#7a9ab8'},
+  {code:'NUC',  label:'Nuclear & Advanced Power',     color:'#fb923c'},
+];
+
+const N_WEEKS = 12;
+
+// ── DATE UTILS ────────────────────────────────────────────────────────────────
+function isoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const ys = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const wn = Math.ceil(((d - ys) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(wn).padStart(2,'0')}`;
+}
+
+function weekStartDate(wk) {
+  const [yr, w] = wk.split('-W');
+  const jan4 = new Date(parseInt(yr), 0, 4);
+  const start = new Date(jan4);
+  start.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (parseInt(w) - 1) * 7);
+  return start;
+}
+
+function weekLabel(wk) {
+  const d = weekStartDate(wk);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${m[d.getMonth()]}`;
+}
+
+function rollingWeeks(n) {
+  const today = new Date();
+  return Array.from({length:n}, (_,i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (n - 1 - i) * 7);
+    return isoWeek(d);
+  });
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+let heatData = {};  // { "2026-W10": { CCS: 5, H2: 3, ... } }
+
+async function loadStorage() {
+  try {
+    const r = await window.storage.get('heatmap:v1');
+    if (r && r.value) heatData = JSON.parse(r.value);
+  } catch(e) { heatData = {}; }
+}
+
+async function persist() {
+  try {
+    await window.storage.set('heatmap:v1', JSON.stringify(heatData));
+    const ts = new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('last-saved').textContent = `Saved ${ts}`;
+  } catch(e) { console.warn('Storage error', e); }
+}
+
+// ── HEAT MAP RENDER ───────────────────────────────────────────────────────────
+function hexRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+function countAlpha(n) {
+  if (!n) return 0;
+  if (n <= 3)  return 0.20;
+  if (n <= 8)  return 0.42;
+  if (n <= 15) return 0.68;
+  if (n <= 25) return 0.88;
+  return 1.0;
+}
+
+function renderHeatmap() {
+  const weeks = rollingWeeks(N_WEEKS);
+  const thisWk = isoWeek(new Date());
+
+  let h = '<table class="hmap-table"><thead><tr><th>Topic</th>';
+  weeks.forEach(wk => {
+    const cur = wk === thisWk;
+    h += `<th class="wk-hd${cur?' cur':''}">W${wk.split('-W')[1]}<br><span style="font-weight:400;color:var(--dim)">${weekLabel(wk)}</span></th>`;
+  });
+  h += '<th style="min-width:70px;text-align:center">Trend</th><th style="min-width:44px;text-align:center">Total</th></tr></thead><tbody>';
+
+  TOPICS.forEach(t => {
+    const counts = weeks.map(wk => ((heatData[wk] || {})[t.code]) || 0);
+    const last4  = counts.slice(-4).reduce((a,b) => a+b, 0);
+    const prev4  = counts.slice(-8,-4).reduce((a,b) => a+b, 0);
+    const total  = counts.reduce((a,b) => a+b, 0);
+    const pct    = prev4 > 0 ? Math.round((last4/prev4 - 1) * 100) : null;
+
+    let trendHtml;
+    if (pct === null || (last4 === 0 && prev4 === 0)) {
+      trendHtml = `<span class="t-fl">—</span>`;
+    } else if (pct > 15) {
+      trendHtml = `<span class="t-up">↑ +${pct}%</span>`;
+    } else if (pct < -15) {
+      trendHtml = `<span class="t-dn">↓ ${pct}%</span>`;
+    } else {
+      trendHtml = `<span class="t-fl">→ ${pct > 0 ? '+' : ''}${pct}%</span>`;
+    }
+
+    h += `<tr><td><div class="topic-lbl"><div class="t-dot" style="background:${t.color}"></div><div><div class="t-code" style="color:${t.color}">${t.code}</div><div class="t-name">${t.label}</div></div></div></td>`;
+
+    weeks.forEach((wk, i) => {
+      const n = counts[i];
+      const alpha = countAlpha(n);
+      const bg = alpha === 0 ? 'var(--b1)' : `rgba(${hexRgb(t.color)},${alpha})`;
+      const ring = wk === thisWk ? 'box-shadow:inset 0 0 0 1.5px var(--accent);' : '';
+      h += `<td><div class="hcell" style="background:${bg};${ring}" onclick="editCell('${t.code}','${wk}')" title="${t.label} · ${wk} · ${n} articles">
+        <span class="hcell-val${n===0?' zero':''}">${n||'·'}</span></div></td>`;
+    });
+
+    h += `<td class="trend-td">${trendHtml}</td>`;
+    h += `<td class="total-td" style="color:${total>0?t.color:'var(--b3)'}">${total||'—'}</td>`;
+    h += '</tr>';
+  });
+
+  h += '</tbody></table>';
+  document.getElementById('hmap-wrap').innerHTML = h;
+}
+
+// ── SINGLE CELL EDIT (via bulk modal scoped to one topic) ─────────────────────
+let editingWeek = null;
+
+function editCell(topicCode, wk) {
+  editingWeek = wk;
+  const d = weekStartDate(wk);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('modal-wk-lbl').textContent = `Week of ${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}  (${wk}) — editing ${topicCode} only`;
+
+  const t = TOPICS.find(x => x.code === topicCode);
+  const cur = ((heatData[wk]||{})[topicCode]) || 0;
+
+  document.getElementById('modal-rows').innerHTML = `
+    <div class="modal-row" style="grid-column:1/-1">
+      <div class="t-dot" style="background:${t.color};width:9px;height:9px;border-radius:50%"></div>
+      <div class="modal-topic-info">
+        <div class="modal-tc" style="color:${t.color}">${t.code}</div>
+        <div class="modal-tn">${t.label}</div>
+      </div>
+      <input class="modal-input" id="mc-${topicCode}" type="number" min="0" max="999" value="${cur}" />
+    </div>`;
+
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => { const el = document.getElementById(`mc-${topicCode}`); if(el){el.focus();el.select();} }, 60);
+}
+
+function openBulkModal() {
+  editingWeek = isoWeek(new Date());
+  const d = weekStartDate(editingWeek);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('modal-wk-lbl').textContent = `Current week — ${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}  (${editingWeek})`;
+
+  let rows = '';
+  TOPICS.forEach(t => {
+    const cur = ((heatData[editingWeek]||{})[t.code]) || 0;
+    rows += `<div class="modal-row">
+      <div class="t-dot" style="background:${t.color};width:8px;height:8px;border-radius:50%"></div>
+      <div class="modal-topic-info">
+        <div class="modal-tc" style="color:${t.color};font-size:0.75rem">${t.code}</div>
+        <div class="modal-tn">${t.label}</div>
+      </div>
+      <input class="modal-input" id="mc-${t.code}" type="number" min="0" max="999" value="${cur}" style="width:56px;font-size:1rem" />
+    </div>`;
+  });
+
+  document.getElementById('modal-rows').innerHTML = rows;
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => { const el = document.getElementById('mc-CCS'); if(el) el.focus(); }, 60);
+
+  document.querySelectorAll('.modal-input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if(e.key === 'Enter') saveModal(); });
+  });
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function saveModal() {
+  if (!editingWeek) return;
+  if (!heatData[editingWeek]) heatData[editingWeek] = {};
+  TOPICS.forEach(t => {
+    const el = document.getElementById(`mc-${t.code}`);
+    if (el) heatData[editingWeek][t.code] = parseInt(el.value) || 0;
+  });
+  await persist();
+  closeModal();
+  renderHeatmap();
+}
+
+function exportCSV() {
+  const weeks = rollingWeeks(N_WEEKS);
+  let csv = 'Week,' + TOPICS.map(t => t.code).join(',') + '\n';
+  weeks.forEach(wk => {
+    csv += wk + ',' + TOPICS.map(t => ((heatData[wk]||{})[t.code])||0).join(',') + '\n';
+  });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+    download: `news_heatmap_${isoWeek(new Date())}.csv`
+  });
+  a.click();
+}
+
+// ── BRIEF GENERATOR ───────────────────────────────────────────────────────────
+const SYSTEM = `You are a senior industry analyst at FutureBridge Advisory. Generate a structured intelligence brief. 
+
+Writing rules: Clear, direct, commercially grounded, slightly opinionated. Like The Economist or Bloomberg Intelligence. Sentence length 10-18 words. No clichés: never use leverage, operationalise, ecosystem as a buzzword, contextualise. Assume intelligent executive reader. Write like a person making an argument.
+
+Output ONLY the following XML and nothing else — no preamble, no markdown, no explanation:
+
+<brief>
+<signal>Content</signal>
+<sowhat>Content</sowhat>
+<yourworld>Content</yourworld>
+<context>Content</context>
+<ecosystem>Content</ecosystem>
+<forecast>Content</forecast>
+<bigbet>Content</bigbet>
+<insight>Content</insight>
+</brief>
+
+Section rules:
+SIGNAL: The raw news event only. 1-2 sentences. No analysis.
+SOWHAT: Why this matters commercially. What changes. 2-4 sentences.
+YOURWORLD: Specific implications for the named client. Reference their strategy and initiatives by name where provided. Be concrete. 3-5 sentences.
+CONTEXT: Market sizing, benchmarks, comparable examples. Quantify. 3-5 sentences.
+ECOSYSTEM: Adjacent movements — supply chain, competitors, regulation, related technologies. 3-4 sentences.
+FORECAST: Where this goes in 24-36 months. One clear direction. 3-4 sentences.
+BIGBET: One bold, defensible forward hypothesis. Provocative. 1-2 sentences only.
+INSIGHT: Exactly one sentence. Connect the signal directly to the named client's stated strategy and live initiatives.`;
+
+async function apiCall(messages, useSearch) {
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 2000,
+    system: SYSTEM,
+    messages
+  };
+  if (useSearch) body.tools = [{type:'web_search_20250305', name:'web_search'}];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`API ${r.status}`);
+  return r.json();
+}
+
+async function generateBrief() {
+  const topicCode = document.getElementById('f-topic').value;
+  const client    = document.getElementById('f-client').value.trim() || 'the client';
+  const signal    = document.getElementById('f-signal').value.trim();
+  const context   = document.getElementById('f-context').value.trim();
+
+  if (!signal) { setStatus('Paste a news signal to generate a brief.'); return; }
+
+  const t = TOPICS.find(x => x.code === topicCode);
+
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('copy-btn').style.display = 'none';
+  document.getElementById('brief-out').classList.remove('show');
+  document.getElementById('loader').classList.add('on');
+  setStatus('Fetching context and generating…');
+
+  const userMsg = `Topic area: ${t.label}
+Client: ${client}${context ? `\nClient context and known strategy:\n${context}` : ''}
+
+News signal to analyse:
+${signal}
+
+Generate the 8-section intelligence brief. Use web search to enrich the context, ecosystem, and forecast sections with current market data where helpful.`;
+
+  const messages = [{role:'user', content: userMsg}];
+
+  try {
+    let data = await apiCall(messages, true);
+    let iterations = 0;
+
+    while (data.stop_reason === 'tool_use' && iterations < 5) {
+      const toolUses = data.content.filter(b => b.type === 'tool_use');
+      messages.push({role:'assistant', content: data.content});
+      messages.push({role:'user', content: toolUses.map(tu => ({
+        type: 'tool_result',
+        tool_use_id: tu.id,
+        content: 'Search complete.'
+      }))});
+      data = await apiCall(messages, true);
+      iterations++;
+    }
+
+    const text = (data.content||[]).filter(b => b.type==='text').map(b => b.text).join('');
+    renderBrief(text, t, client);
+    setStatus('');
+
+  } catch(err) {
+    setStatus(`Error: ${err.message}`);
+  }
+
+  document.getElementById('gen-btn').disabled = false;
+  document.getElementById('loader').classList.remove('on');
+}
+
+const SECTIONS = [
+  {key:'signal',    label:'01 · Signal',    cls:''},
+  {key:'sowhat',    label:'02 · So What',   cls:''},
+  {key:'yourworld', label:'03 · Your World', cls:''},
+  {key:'context',   label:'04 · Context',   cls:''},
+  {key:'ecosystem', label:'05 · Ecosystem', cls:''},
+  {key:'forecast',  label:'06 · Forecast',  cls:''},
+  {key:'bigbet',    label:'07 · Big Bet',   cls:'bigbet'},
+  {key:'insight',   label:'08 · Insight Statement', cls:'insight'},
+];
+
+function renderBrief(text, t, client) {
+  const parsed = {};
+  SECTIONS.forEach(s => {
+    const m = text.match(new RegExp(`<${s.key}>([\\s\\S]*?)<\\/${s.key}>`));
+    parsed[s.key] = m ? m[1].trim() : '';
+  });
+
+  const hasContent = Object.values(parsed).some(v => v.length > 0);
+  const date = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+
+  const el = document.getElementById('brief-out');
+
+  if (!hasContent) {
+    el.innerHTML = `<div class="bs"><div class="bs-lbl">Generated Output</div><div class="bs-txt" style="white-space:pre-wrap">${text}</div></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="brief-hdr">
+        <div class="brief-topic-tag" style="color:${t.color}">${t.code} · ${t.label}</div>
+        <div class="brief-title">Intelligence Brief — ${client} · ${date}</div>
+      </div>
+      <div class="brief-body">
+        ${SECTIONS.map(s => `
+        <div class="bs ${s.cls}">
+          <div class="bs-lbl" style="color:${t.color}">${s.key === 'yourworld' ? `03 · Your World — ${client}` : s.label}</div>
+          <div class="bs-txt">${parsed[s.key] || '<span style="color:var(--dim);font-style:italic">Section not generated.</span>'}</div>
+        </div>`).join('')}
+      </div>`;
+  }
+
+  el.classList.add('show');
+  document.getElementById('copy-btn').style.display = 'inline-block';
+}
+
+function copyBrief() {
+  const el = document.getElementById('brief-out');
+  navigator.clipboard.writeText(el.innerText || '').then(() => setStatus('Copied to clipboard.'));
+}
+
+function setStatus(msg) {
+  document.getElementById('gen-status').textContent = msg;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(async function init() {
+  await loadStorage();
+  renderHeatmap();
+})();
+</script>
+</body>
+</html>

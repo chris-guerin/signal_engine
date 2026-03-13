@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Engine — Decision Console Mockup</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a31;
+      --panel-2: #18223f;
+      --panel-3: #213059;
+      --text: #e9eefc;
+      --muted: #9dafd6;
+      --line: #2a3968;
+      --good: #48d597;
+      --warn: #ffbf5f;
+      --bad: #ff6b81;
+      --accent: #7ea7ff;
+      --accent-2: #99f0ff;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(126,167,255,.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(153,240,255,.10), transparent 22%),
+        linear-gradient(180deg, #08101f 0%, #0b1020 100%);
+      color: var(--text);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: rgba(7,12,25,.72);
+      backdrop-filter: blur(18px);
+      padding: 24px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #09111f;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-section {
+      margin-bottom: 26px;
+    }
+
+    .nav-title {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      margin: 0 0 10px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      color: var(--text);
+      text-decoration: none;
+      margin-bottom: 8px;
+      background: transparent;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(126,167,255,.10);
+      border-color: rgba(126,167,255,.18);
+    }
+
+    .nav-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+
+    .main {
+      padding: 26px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(18,26,49,.94), rgba(12,19,37,.94));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), #92b4ff);
+      color: #09111f;
+      border-color: transparent;
+    }
+
+    .summary {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .metric {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .metric .delta {
+      font-size: 13px;
+      color: var(--good);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px 0;
+    }
+
+    .section-header h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .section-header p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-wrap { padding: 14px 18px 18px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .muted { color: var(--muted); }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .decision-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .decision {
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+
+    .decision.active-invest {
+      color: #08121f;
+      background: linear-gradient(135deg, #65f0b1, #47d596);
+      border-color: transparent;
+      font-weight: 800;
+    }
+
+    .decision.active-watch {
+      color: #2a1d00;
+      background: linear-gradient(135deg, #ffd58a, #ffbf5f);
+      border-color: transparent;
+      font-weight: 800;
+    }
+
+    .decision.active-prune {
+      color: #fff;
+      background: rgba(255,107,129,.18);
+      border-color: rgba(255,107,129,.32);
+      font-weight: 800;
+    }
+
+    .detail {
+      padding: 18px;
+    }
+
+    .headline-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .headline-row h3 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+
+    .headline-row p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .score {
+      min-width: 210px;
+      background: linear-gradient(180deg, rgba(126,167,255,.14), rgba(126,167,255,.04));
+      border: 1px solid rgba(126,167,255,.2);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .score .big {
+      font-size: 36px;
+      font-weight: 900;
+      margin: 6px 0 4px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .mini-card {
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      padding: 14px;
+    }
+
+    .mini-card .k {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .mini-card .v {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .box {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .box h4 {
+      margin: 0 0 12px;
+      font-size: 14px;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.05);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .list-item span:last-child {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .signal-timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .timeline-item:last-child { border-bottom: 0; }
+
+    .timeline-date {
+      color: var(--muted);
+      font-size: 12px;
+      padding-top: 2px;
+    }
+
+    .timeline-body strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .timeline-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .topbar, .grid, .two-col { grid-template-columns: 1fr; }
+      .mini-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-badge">SE</div>
+        <div>
+          <h1>Signal Engine</h1>
+          <p>Technology decision console</p>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">Core Views</div>
+        <a class="nav-item active" href="#">
+          <span>Decision Portfolio</span>
+          <span class="nav-pill">Live</span>
+        </a>
+        <a class="nav-item" href="#">
+          <span>Hypothesis Engine</span>
+          <span class="nav-pill">38</span>
+        </a>
+        <a class="nav-item" href="#">
+          <span>Signals Feed</span>
+          <span class="nav-pill">142</span>
+        </a>
+        <a class="nav-item" href="#">
+          <span>Priority Radar</span>
+          <span class="nav-pill">New</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">Themes</div>
+        <a class="nav-item" href="#"><span>Advanced Energy</span></a>
+        <a class="nav-item" href="#"><span>Mobility Platforms</span></a>
+        <a class="nav-item" href="#"><span>Industrial AI</span></a>
+        <a class="nav-item" href="#"><span>Materials & Supply</span></a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">Decision Filters</div>
+        <a class="nav-item" href="#"><span>Invest</span><span class="nav-pill">11</span></a>
+        <a class="nav-item" href="#"><span>Watch</span><span class="nav-pill">14</span></a>
+        <a class="nav-item" href="#"><span>Defend</span><span class="nav-pill">7</span></a>
+        <a class="nav-item" href="#"><span>Prune</span><span class="nav-pill">6</span></a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="panel hero">
+          <div>
+            <h2>Turn signal noise into capital decisions</h2>
+            <p>
+              A front end built around what leaders actually need to know: what matters, what is changing,
+              what needs to be true, and what decision should follow.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn">Export brief</button>
+            <button class="btn">Open signal log</button>
+            <button class="btn primary">Create hypothesis</button>
+          </div>
+        </div>
+
+        <div class="panel summary">
+          <div class="metric">
+            <div class="label">Priority technologies</div>
+            <div class="value">32</div>
+            <div class="delta">+5 this quarter</div>
+          </div>
+          <div class="metric">
+            <div class="label">Signals ingested</div>
+            <div class="value">1,248</div>
+            <div class="delta">+14.2% month on month</div>
+          </div>
+          <div class="metric">
+            <div class="label">Hypotheses validated</div>
+            <div class="value">9</div>
+            <div class="delta">4 moved to invest</div>
+          </div>
+          <div class="metric">
+            <div class="label">Decision shifts</div>
+            <div class="value">12</div>
+            <div class="delta">3 major reversals flagged</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="stack">
+          <div class="panel">
+            <div class="section-header">
+              <div>
+                <h3>Technology portfolio</h3>
+                <p>Start with priority, probability, momentum and decision. Not pretty charts for their own sake.</p>
+              </div>
+              <div class="tag">Q1 executive view</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Technology / theme</th>
+                    <th>Hypothesis status</th>
+                    <th>Momentum</th>
+                    <th>Decision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>Enhanced geothermal</strong>
+                      <div class="chip-row">
+                        <span class="tag">Energy</span>
+                        <span class="tag">Near-term pilots</span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>Commercial scale viability before 2032</strong><br>
+                      <span class="muted">72% probability</span>
+                    </td>
+                    <td><span class="good">▲ +18 pts</span></td>
+                    <td><div class="decision-row"><span class="decision active-invest">INVEST</span></div></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Rotary steam cracking</strong>
+                      <div class="chip-row">
+                        <span class="tag">Chemicals</span>
+                        <span class="tag">Cost watch</span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>Becomes cost-competitive in EU by 2030</strong><br>
+                      <span class="muted">43% probability</span>
+                    </td>
+                    <td><span class="warn">▶ +4 pts</span></td>
+                    <td><div class="decision-row"><span class="decision active-watch">WATCH</span></div></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>V2G at household scale</strong>
+                      <div class="chip-row">
+                        <span class="tag">Mobility</span>
+                        <span class="tag">Policy exposed</span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>Mainstream consumer adoption before 2030</strong><br>
+                      <span class="muted">29% probability</span>
+                    </td>
+                    <td><span class="bad">▼ -11 pts</span></td>
+                    <td><div class="decision-row"><span class="decision active-prune">PRUNE</span></div></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>On-prem industrial AI</strong>
+                      <div class="chip-row">
+                        <span class="tag">Industrial AI</span>
+                        <span class="tag">Security-led</span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>Moves from pilot to standard architecture</strong><br>
+                      <span class="muted">68% probability</span>
+                    </td>
+                    <td><span class="good">▲ +13 pts</span></td>
+                    <td><div class="decision-row"><span class="decision active-invest">INVEST</span></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel detail">
+            <div class="headline-row">
+              <div>
+                <h3>Hypothesis detail: Enhanced geothermal</h3>
+                <p>
+                  Hypothesis: enhanced geothermal becomes a credible investable growth platform before 2032 in North America and selected European markets.
+                </p>
+              </div>
+              <div class="score">
+                <div class="muted">Current confidence</div>
+                <div class="big">72%</div>
+                <div class="good">▲ from 54% last quarter</div>
+              </div>
+            </div>
+
+            <div class="mini-grid">
+              <div class="mini-card">
+                <div class="k">Priority score</div>
+                <div class="v">9.1</div>
+              </div>
+              <div class="mini-card">
+                <div class="k">Signal velocity</div>
+                <div class="v">High</div>
+              </div>
+              <div class="mini-card">
+                <div class="k">Decision stance</div>
+                <div class="v good">Invest</div>
+              </div>
+            </div>
+
+            <div class="two-col">
+              <div class="box">
+                <h4>What needs to be true</h4>
+                <div class="list">
+                  <div class="list-item"><span>Drilling cost curve falls sharply enough for repeatable economics</span><span class="good">Supported</span></div>
+                  <div class="list-item"><span>Utility and oilfield capabilities converge into deployable projects</span><span class="good">Supported</span></div>
+                  <div class="list-item"><span>Regulatory treatment improves project bankability</span><span class="warn">Mixed</span></div>
+                  <div class="list-item"><span>Pilot performance translates into dependable uptime</span><span class="warn">In test</span></div>
+                  <div class="list-item"><span>Capital markets accept geothermal as a scalable transition play</span><span class="good">Improving</span></div>
+                </div>
+              </div>
+              <div class="box">
+                <h4>Decision frame</h4>
+                <div class="list">
+                  <div class="list-item"><span>Where to play</span><span>US, Germany, selected Nordics</span></div>
+                  <div class="list-item"><span>Why now</span><span>Signal convergence is accelerating</span></div>
+                  <div class="list-item"><span>Main risk</span><span>Project economics still site-sensitive</span></div>
+                  <div class="list-item"><span>Commercial action</span><span>Build client-facing shortlist and radar</span></div>
+                  <div class="list-item"><span>Review cadence</span><span>Monthly</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="box">
+              <h4>Signal timeline</h4>
+              <div class="signal-timeline">
+                <div class="timeline-item">
+                  <div class="timeline-date">05 Mar 2026</div>
+                  <div class="timeline-body">
+                    <strong>New project financing round closes above expected level</strong>
+                    <p>Suggests investor appetite is strengthening beyond demonstration-stage enthusiasm.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-date">21 Feb 2026</div>
+                  <div class="timeline-body">
+                    <strong>Cross-sector partnership announced between drilling and power players</strong>
+                    <p>Supports the WNTBT assumption that capabilities from adjacent sectors are starting to combine.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-date">02 Feb 2026</div>
+                  <div class="timeline-body">
+                    <strong>Permitting change reduces development uncertainty in one target market</strong>
+                    <p>A modest policy shift, but exactly the sort of thing that moves investability faster than press releases do.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="footer-note">
+                This view is the point: raw signals are still available, but the primary interface is hypothesis health, momentum, and decision consequence.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="panel">
+            <div class="section-header">
+              <div>
+                <h3>Priority radar</h3>
+                <p>Notional scoring by business value, maturity shift, urgency and strategic fit.</p>
+              </div>
+            </div>
+            <div class="detail">
+              <div class="list">
+                <div class="list-item"><span><strong>On-prem industrial AI</strong><br><span class="muted">High strategic fit. Security-led demand.</span></span><span class="good">9.4</span></div>
+                <div class="list-item"><span><strong>Enhanced geothermal</strong><br><span class="muted">Strong momentum and adjacent capability overlap.</span></span><span class="good">9.1</span></div>
+                <div class="list-item"><span><strong>Synthetic fuels for aviation</strong><br><span class="muted">Policy-heavy. Commercial timing still uneven.</span></span><span class="warn">7.2</span></div>
+                <div class="list-item"><span><strong>Domestic V2G</strong><br><span class="muted">Too many assumptions still need proving.</span></span><span class="bad">4.8</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <div>
+                <h3>Decision queue</h3>
+                <p>The part senior people actually care about.</p>
+              </div>
+            </div>
+            <div class="detail">
+              <div class="list">
+                <div class="list-item"><span><strong>Invest:</strong> Build enhanced geothermal client offer for North America</span><span>Owner: Energy</span></div>
+                <div class="list-item"><span><strong>Watch:</strong> Reassess rotary steam cracking economics after next cost update</span><span>Owner: Chemicals</span></div>
+                <div class="list-item"><span><strong>Defend:</strong> Protect existing EV storage narrative against V2G over-rotation</span><span>Owner: Mobility</span></div>
+                <div class="list-item"><span><strong>Prune:</strong> Reduce airtime on low-signal hydrogen adjacency themes</span><span>Owner: Practice lead</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <div>
+                <h3>Design principle</h3>
+                <p>Your edge is not the pretty bit. It is the method under it.</p>
+              </div>
+            </div>
+            <div class="detail">
+              <div class="box">
+                <h4>Core flow</h4>
+                <div class="list">
+                  <div class="list-item"><span>1. Define strategic hypothesis</span><span>Human-led</span></div>
+                  <div class="list-item"><span>2. Set what needs to be true</span><span>Method</span></div>
+                  <div class="list-item"><span>3. Ingest and classify signals</span><span>Engine</span></div>
+                  <div class="list-item"><span>4. Update confidence and momentum</span><span>Model</span></div>
+                  <div class="list-item"><span>5. Trigger decision and next action</span><span>Front end</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
