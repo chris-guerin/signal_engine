@@ -1,0 +1,111 @@
+name: Inject Hypothesis Loader
+
+# Run manually from the Actions tab, or automatically when hyp-loader.js changes
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'hyp-loader.js'
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Inject loader into all intelligence briefs
+        run: |
+          python3 << 'PYEOF'
+          import re, os, glob
+
+          ENTITY_MAP = {
+              "shell":       "SHELL",
+              "bp":          "BP",
+              "edf":         "EDF",
+              "halliburton": "HALLIBURTON",
+              "eon":         "EON",
+              "mol":         "MOL",
+              "vw":          "VW_GROUP",
+              "audi":        "AUDI",
+              "daimler":     "DAIMLER",
+              "porsche":     "PORSCHE",
+              "seat_cupra":  "SEAT_CUPRA",
+              "skoda":       "SKODA",
+              "michelin":    "MICHELIN",
+              "woco":        "WOCO",
+              "datwyler":    "DATWYLER",
+              "infineon":    "INFINEON",
+          }
+
+          LOADER_BLOCK = '''
+            <!-- LIVE HYPOTHESIS LOADER -->
+            <div id="hyp-root" data-entity="{ENTITY}"></div>
+            <noscript><p style="color:#4a6278;font-family:Courier New,monospace;font-size:0.75rem;padding:16px 0">
+              Live hypothesis feed requires JavaScript.
+            </p></noscript>
+            <script src="hyp-loader.js"></script>
+          '''
+
+          def already_injected(content):
+              return "hyp-loader.js" in content or "hyp-root" in content
+
+          def detect_entity(filename):
+              lower = filename.lower()
+              for key, entity in ENTITY_MAP.items():
+                  if key in lower:
+                      return entity
+              return None
+
+          def inject(content, entity):
+              block = LOADER_BLOCK.replace("{ENTITY}", entity)
+              m = re.search(r'(<div style="margin:0 0 44px 0;border:1px solid #243444)', content)
+              if m:
+                  return content[:m.start()] + block + content[m.start():]
+              m = re.search(r'(<section id="hypotheses"[^>]*>)', content)
+              if m:
+                  return content[:m.end()] + "\n" + block + content[m.end():]
+              return None
+
+          briefs = glob.glob("*intelligence_brief*.html")
+          print(f"Found {len(briefs)} brief(s)")
+
+          updated = 0
+          for filepath in briefs:
+              filename = os.path.basename(filepath)
+              entity = detect_entity(filename)
+              if not entity:
+                  print(f"  SKIP {filename} — entity not detected")
+                  continue
+
+              with open(filepath, "r", encoding="utf-8") as f:
+                  content = f.read()
+
+              if already_injected(content):
+                  print(f"  SKIP {filename} — already has loader")
+                  continue
+
+              new_content = inject(content, entity)
+              if not new_content:
+                  print(f"  SKIP {filename} — no injection point found")
+                  continue
+
+              with open(filepath, "w", encoding="utf-8") as f:
+                  f.write(new_content)
+
+              print(f"  OK   {filename} → {entity}")
+              updated += 1
+
+          print(f"\n{updated} file(s) updated")
+          PYEOF
+
+      - name: Commit changes
+        run: |
+          git config user.name  "Signal Engine Bot"
+          git config user.email "signal-engine@futurebridgeadvisory.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Signal Engine: inject live hypothesis loader"
+          git push
